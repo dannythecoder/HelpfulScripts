@@ -116,7 +116,7 @@ class RunElsewhere:
 				for cmd in self.command_list:
 					print("->Running Command:", cmd)
 					stdin, stdout, stderr = ssh.exec_command(cmd)
-					if cmd.starts_with("sudo"):
+					if cmd.startswith("sudo"):
 						stdin.write(self.password + '\n')
 						stdin.flush()
 				
