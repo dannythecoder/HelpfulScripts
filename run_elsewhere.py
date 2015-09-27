@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from __future__ import print_function
 """
 runElsewhere.py
 Written by Danny Caudill (DannyTheCoder).
@@ -23,20 +22,21 @@ as well as a main() that handles a simple use-case.
    like && or ||.
 3. When run, it will ask for a username and password, which it assumes
    will work for all the hosts in the list.
-4. If using sudo, it is best to use 'sudo -k <command>', since this assumes
-   that password authentication is required.  If using pre-shared ssh keys,
-   then modify the relevant section of run() to skip the password write.
+4. sudo and paramiko do not seem to get along very well.  There are a few
+   schemes that work on some systems, and this code uses the most popular.  If
+   it doesn't work, don't be too surprised.
 5. Enjoy your newly available free time!
 
 """
 
 # Imports
-import sys
+from __future__ import print_function
+import socket
 import paramiko
 import getpass
 
 
-class RunElsewhere:
+class RunElsewhere(object):
     """ Main class for this module.
 
     Attributes:
@@ -61,24 +61,24 @@ class RunElsewhere:
             self.load_command_list(cmd_file)
 
         self.collect_login_creds()
-        
+
     def load_host_list(self, filename):
         """ Load the list of hosts from the file. """
-        with open(filename, 'r') as fd:
-            self.host_list = fd.read().splitlines()
-    
+        with open(filename, 'r') as content:
+            self.host_list = content.read().splitlines()
+
     def load_command_list(self, filename):
         """ Load the list of commands from the file. """
-        with open(filename, 'r') as fd:
-            self.command_list = fd.read().splitlines()
-    
+        with open(filename, 'r') as content:
+            self.command_list = content.read().splitlines()
+
     def collect_login_creds(self):
         """ Collect the username and password from the user. """
         print('Enter Username: ')
         self.username = raw_input()
         print('Enter Password: ')
         self.password = getpass.getpass()
-        
+
     def run(self):
         """ Run the commands on all the hosts
 
@@ -89,45 +89,47 @@ class RunElsewhere:
         # Debug print statements
         # print(self.host_list)
         # print(self.command_list)
-    
+
         # Ensure that all config info is available
         if len(self.host_list) == 0:
             print('Hosts list is empty! Aborting.')
             exit(1)
-        
+
         if len(self.command_list) == 0:
             print('Command list is empty! Aborting.')
             exit(2)
-        
+
         # Connect to each host and run the commands
         for host in self.host_list:
             print('\n+++++++++++++++++++++++++++++++++++++')
             print('Connecting to', host)
-            
+
             # Connect to this host
             try:
                 ssh = paramiko.SSHClient()
                 ssh.load_system_host_keys()
                 ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-                ssh.connect(host, username=self.username, 
+                ssh.connect(host, username=self.username,
                             password=self.password, timeout=20)
                 print('Connected.')
-            
-            except:
+
+            except (paramiko.AuthenticationException, paramiko.SSHException,
+                    paramiko.BadHostKeyException, socket.error) as exc:
                 print('Failed to connect, moving on to the next host...')
-                print('Reason: ', sys.exc_info()[0], sys.exc_info()[1])
+                print('Reason: ', repr(exc))
                 continue
-                
+
             try:
                 # Run the commands (if we get here, the connect() call did
                 # not throw an exception, so it must have worked)
                 for cmd in self.command_list:
+                    print('=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\n')
                     print('->Running Command:', cmd)
                     stdin, stdout, stderr = ssh.exec_command(cmd)
                     if cmd.startswith('sudo'):
                         stdin.write(self.password + '\n')
                         stdin.flush()
-                
+
                     # Save the output
                     print('-->Output:')
                     lines = stdout.read()
@@ -137,19 +139,20 @@ class RunElsewhere:
                     print('-->Errors:')
                     lines = stderr.read()
                     print(lines)
+                    print('=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\n')
 
                 ssh.close()
-                
-            except:
+
+            except paramiko.SSHException as exc:
                 print('Failed to execute command, moving on to the '
                       'next host...')
-                print('Reason: ', sys.exc_info()[0])
-                
+                print('Reason: ', repr(exc))
+
         # Inform the user of the results
         print('\n=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-')
         print('Finished running commands, have a great day!')
         print('=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\n')
-        
+
         # Done
 
 
@@ -157,6 +160,6 @@ def main():
     """Main subroutine when run as a script. """
     runner = RunElsewhere('hostlist.txt', 'commands.txt')
     runner.run()
-    
+
 if __name__ == '__main__':
     main()
