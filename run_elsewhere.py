@@ -83,7 +83,7 @@ class RunElsewhere(object):
         """ Run the commands on all the hosts
 
         Tip: Use the constructor that takes filenames, or call
-             loadHostList(), load_command_list(), and collect_login_creds()
+             load_host_list(), load_command_list(), and collect_login_creds()
              before calling run().
         """
         # Debug print statements
