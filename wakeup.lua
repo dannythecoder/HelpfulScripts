@@ -1,27 +1,28 @@
 #!/usr/bin/lua
---
--- wakeup.lua
---
--- Written by Danny Caudill (DannyTheCoder).
--- January 10, 2016
---
---             Copyright Danny Caudill. 2014.
--- Distributed under the Boost Software License, Version 1.0.
---    (See accompanying file LICENSE_1_0.txt or copy at
---        http://www.boost.org/LICENSE_1_0.txt)
---
--- Send a Wake On Lan packet on this LAN segment
--- 
--- Usage:
--- lua wakeup.lua <mac address>
---
--- Example: 
--- lua wakeup.lua 20:11:22:33:44:55
--- 
--- Dependencies:
--- Lua 5.0
--- lua-socket
---
+--[[
+ wakeup.lua
+
+ Written by Danny Caudill (DannyTheCoder).
+ January 10, 2016
+
+             Copyright Danny Caudill. 2014.
+ Distributed under the Boost Software License, Version 1.0.
+    (See accompanying file LICENSE_1_0.txt or copy at
+        http://www.boost.org/LICENSE_1_0.txt)
+
+ Send a Wake On Lan packet on this LAN segment
+
+ Usage:
+ lua wakeup.lua <mac address>
+
+ Example:
+ lua wakeup.lua 20:11:22:33:44:55
+
+ Dependencies:
+ Lua 5.0
+ lua-socket
+
+]]
 
 require "socket"
 
@@ -38,18 +39,18 @@ debug = true
 	    https://en.m.wikipedia.org/wiki/Wake-on-LAN
 	    https://gist.github.com/dolzenko/4125565
 	 
-  ]]
+]]
 function genPacket(mac)
     local packet = '\255\255\255\255\255\255'
     
     -- convert mac to a 6 numbers
     macList = {}
-    macList[0] = 76
-    macList[1] = 77
-    macList[2] = 78
-    macList[3] = 79
-    macList[4] = 80
-    macList[5] = 81
+    macList[0] = tonumber(string.sub(mac, 0, 2), 16)
+    macList[1] = tonumber(string.sub(mac, 4, 5), 16)
+    macList[2] = tonumber(string.sub(mac, 7, 8), 16)
+    macList[3] = tonumber(string.sub(mac, 10, 11), 16)
+    macList[4] = tonumber(string.sub(mac, 13, 14), 16)
+    macList[5] = tonumber(string.sub(mac, 16, 17), 16)
     
     -- add bytes 16 times
     local i = 0
@@ -74,7 +75,7 @@ end
 	Reference:
 	    http://w3.impa.br/~diego/software/luasocket/udp.html
 	  
-  ]]
+]]
 function sendPacket(content)
     if debug then
         print(content)
@@ -93,7 +94,7 @@ function main()
     if arg[1] ~= nil then 
         mac = arg[1]
     else
-        mac = "20:11:22:33:44:55"
+        mac = '20:31:32:33:34:35'
     end
     
     content = genPacket(mac)
