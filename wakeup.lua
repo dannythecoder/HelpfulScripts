@@ -27,13 +27,6 @@ require "socket"
 
 debug = true
 
--- Get the MAC Address
-if arg[1] ~= nil then 
-    mac = arg[1]
-else
-    mac = "20:11:22:33:44:55"
-end
-
 --[[
 	Generate the Wake on LAN Magic Packet.
 	
@@ -46,11 +39,28 @@ end
 	    https://gist.github.com/dolzenko/4125565
 	 
   ]]
-function genPacket()
-    local packet = '\50'
+function genPacket(mac)
+    local packet = '\255\255\255\255\255\255'
     
-    packet = packet .. '\76'
-    packet = packet .. '\79'
+    -- convert mac to a 6 numbers
+    macList = {}
+    macList[0] = 76
+    macList[1] = 77
+    macList[2] = 78
+    macList[3] = 79
+    macList[4] = 80
+    macList[5] = 81
+    
+    -- add bytes 16 times
+    local i = 0
+    while i < 16 do
+    	local k = 0
+    	while k < 6 do
+            packet = packet .. string.char(macList[k])
+            k = k + 1
+        end
+        i = i + 1
+    end
     
     return packet
 end
@@ -77,6 +87,18 @@ function sendPacket(content)
 end
 
 -- Main subroutine
-content = genPacket()
-sendPacket(content)
+function main()
 
+    -- Get the MAC Address
+    if arg[1] ~= nil then 
+        mac = arg[1]
+    else
+        mac = "20:11:22:33:44:55"
+    end
+    
+    content = genPacket(mac)
+    sendPacket(content)
+    
+end
+
+main()
