@@ -52,6 +52,13 @@ function genPacket(mac)
     macList[4] = tonumber(string.sub(mac, 13, 14), 16)
     macList[5] = tonumber(string.sub(mac, 16, 17), 16)
     
+    if debug then
+        print('MAC Address bytes:')
+        for k, v in pairs(macList) do
+            print(k, v)
+        end
+    end
+
     -- add bytes 16 times
     local i = 0
     while i < 16 do
@@ -76,15 +83,27 @@ end
 	    http://w3.impa.br/~diego/software/luasocket/udp.html
 	  
 ]]
-function sendPacket(content)
+function sendPacket(content, ip)
     if debug then
-        print(content)
+        -- print(content)
+        local i = 0
+        while i < content:len() do
+            print(string.byte(string.sub(content, i, i)))
+            i = i + 1
+        end
     end
-    
-    sock = socket.udp()
-    sock:setoption('broadcast', true)
-    sock:sendto(content, '239.255.255.250', 7)
 
+    sock = socket.udp()
+    if ip == nil then
+        bcastIP = '239.255.255.250'
+        print('Sending broadcast to:', bcastIP)
+        sock:setoption('broadcast', true)
+        sock:sendto(content, bcastIP, 7)
+    else
+        -- Send only to the target IP
+        print('Sending to:', ip)
+        sock:sendto(content, ip, 7)
+    end
 end
 
 -- Main subroutine
@@ -96,10 +115,15 @@ function main()
     else
         mac = '20:31:32:33:34:35'
     end
-    
+
+    -- Get the (optional) destination IP
+    if arg[2] ~= nil then
+        ip = arg[2]
+    end
+
     content = genPacket(mac)
-    sendPacket(content)
-    
+    sendPacket(content, ip)
+
 end
 
 main()
